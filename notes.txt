@@ -1,0 +1,3 @@
+Example arRPC data:
+on game start -> {"activity":{"application_id":"1124353632758939688","type":0,"metadata":{},"flags":0,"name":"Krita","timestamps":{"start":1715291379208}},"pid":11616,"socketId":"1124353632758939688"}
+on game stop -> {"activity":null,"pid":15540,"socketId":"1124353632758939688"}
