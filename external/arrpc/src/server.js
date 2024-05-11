@@ -21,7 +21,9 @@ export default class RPCServer extends EventEmitter {
     };
 
     this.ipc = await new IPCServer(handlers);
-    this.ws = await new WSServer(handlers);
+
+    // mod: Disable WS -> not needed for our Python daemon 
+    //this.ws = await new WSServer(handlers);
 
     if (!process.argv.includes('--no-process-scanning') && !process.env.ARRPC_NO_PROCESS_SCANNING) this.process = await new ProcessServer(handlers);
 
