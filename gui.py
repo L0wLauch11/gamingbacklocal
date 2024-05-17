@@ -54,7 +54,10 @@ def listen_to_pipe():
     global table_games, list_other_processes, list_ignored_processes
     global process_list
     
-    current_running_processes = communication.msg_read('process_list')
+    try:
+        current_running_processes = communication.msg_read('process_list')
+    except KeyError as ex:
+        list_other_processes.addItem('Is the daemon running?')
     
     print('Listening to shelve')
 
@@ -64,11 +67,10 @@ def listen_to_pipe():
             
             # Ignored processes should be ignored COMPLETELY, like the name implies
             for ignored in ignored_processes:
-                #print(current_running_processes)
+                #print(current_running_processes)2
                 if ignored in current_running_processes:
                     current_running_processes.remove(ignored)
             
-            # Processes changed; read the new ones
             if len(process_list) != len(current_running_processes):
                 list_other_processes.clear()
                 list_other_processes.addItems(process_list)
@@ -81,6 +83,8 @@ def listen_to_pipe():
         time.sleep(update_interval)
 
 if __name__ == '__main__':
+    communication.prepare()
+    
     ui_file = QFile(paths.MAIN_WINDOW)
     ui_file.open(QFile.ReadOnly)
 

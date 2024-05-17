@@ -1,13 +1,16 @@
-from enum import Enum
 import shelve
+import shutil
 import os
 
 import paths
 
 
 def remove_old():
-    if os.path.exists(paths.COMMUNICATION_FILE):
-        os.remove(paths.COMMUNICATION_FILE)
+    shutil.rmtree(paths.COMMUNICATION_DIR)
+
+def prepare():
+    if not os.path.exists(paths.COMMUNICATION_DIR):
+        os.mkdir(paths.COMMUNICATION_DIR)
 
 def msg_send(msg_type, msg):
     file = shelve.open(paths.COMMUNICATION_FILE)

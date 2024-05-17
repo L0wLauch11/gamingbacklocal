@@ -13,4 +13,5 @@ LOGLIST = SAVEDATA_DIR + '/loglist.txt'
 
 MAIN_WINDOW = './qt/mainwindow.ui'
 
-COMMUNICATION_FILE = './shelve/comm_localbacklog.shelve'
+COMMUNICATION_DIR = './shelve'
+COMMUNICATION_FILE = f'{COMMUNICATION_DIR}/comm_localbacklog.shelve'

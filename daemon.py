@@ -2,6 +2,7 @@ import psutil
 import sqlite3
 import time
 from datetime import datetime
+import atexit
 
 import paths
 import communication
@@ -70,7 +71,9 @@ def database_write_game(game_name):
 
 if __name__ == '__main__':
     database_migrate()
-    communication.remove_old()
+    
+    communication.prepare()
+    atexit.register(communication.remove_old)
     
     while True:
         watch_processes()
