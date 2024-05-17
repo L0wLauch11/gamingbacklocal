@@ -1,5 +1,6 @@
 # This script should be hooked into some kind of UI (here: gui.py)
 import paths
+import os
 
 console_prefix = '[interactions.py]'
 
@@ -36,3 +37,16 @@ def remove_from_loglist(process_name):
 
 def remove_from_ignorelist(process_name):
     _file_removeline(paths.IGNORELIST, process_name)
+
+def ignorelist_read():
+    ignored_processes = []
+    
+    if os.path.exists(paths.IGNORELIST):
+        ignorelist = open(paths.IGNORELIST, 'r')
+        for line in ignorelist.readlines():
+            line_sanitized = line.replace('\n', '')
+            ignored_processes.append(line_sanitized)
+            
+        ignorelist.close()
+    
+    return ignored_processes

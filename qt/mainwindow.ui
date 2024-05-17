@@ -14,14 +14,6 @@
    <string>gmg-backlog</string>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>572</width>
-     <height>501</height>
-    </rect>
-   </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QLabel" name="label">
@@ -133,7 +125,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QListView" name="listOtherProcesses"/>
+     <widget class="QListWidget" name="listOtherProcesses"/>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -272,7 +264,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QListView" name="listIgnoredProcesses"/>
+     <widget class="QListWidget" name="listIgnoredProcesses"/>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_4">

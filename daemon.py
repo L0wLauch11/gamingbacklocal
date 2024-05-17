@@ -1,18 +1,18 @@
 import psutil
 import sqlite3
 import time
+import os
 
 import paths
+import communication
 
 console_prefix = '[daemon.py]'
+logging_interval = 5 # In Seconds
 
 db_connection = sqlite3.connect(paths.GAMELOG)
 db_cursor = db_connection.cursor()
 db_table_name = 'games'
 db_table = f'{db_table_name}(name TEXT PRIMARY KEY, playtime INTEGER)'
-
-
-logging_interval = 5 # In Seconds
 
 
 def watch_processes():
@@ -30,6 +30,8 @@ def watch_processes():
             watched_processes.append(process_name)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
+    
+    communication.msg_send('process_list', watched_processes)
 
 
 def database_migrate():
@@ -44,7 +46,7 @@ def database_write_game(game_name):
     # So we know the process has been running for approx. 'logging_interval' seconds
     # That's why we can take 'logging_interval' and assume the game/process has been running for
     # 'logging_interval' seconds, this will of course cause slight deviations if player closes the process inbetween
-    # the 'logging_interval' but no matter, it's accurate enough for our playtime logger 
+    # the 'logging_interval' but no matter, it's accurate enough for our playtime logger
     game_session_time = logging_interval
     
     logged_playtime = db_cursor.execute(f'SELECT playtime FROM {db_table_name} WHERE name=\'{game_name}\'').fetchone()
@@ -61,8 +63,8 @@ def database_write_game(game_name):
     #print(f'{console_prefix} {game_name} total playtime: {game_total_playtime}')
 
 if __name__ == '__main__':
-    # Init DB should be done first
     database_migrate()
+    communication.remove_old()
     
     while True:
         watch_processes()
