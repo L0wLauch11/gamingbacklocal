@@ -3,3 +3,4 @@ savedata/*
 .venv*/
 output/
 .vscode/
+shelve/*
