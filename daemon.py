@@ -1,7 +1,7 @@
 import psutil
 import sqlite3
 import time
-import os
+from datetime import datetime
 
 import paths
 import communication
@@ -12,7 +12,7 @@ logging_interval = 5 # In Seconds
 db_connection = sqlite3.connect(paths.GAMELOG)
 db_cursor = db_connection.cursor()
 db_table_name = 'games'
-db_table = f'{db_table_name}(name TEXT PRIMARY KEY, playtime INTEGER)'
+db_table = f'{db_table_name}(name TEXT PRIMARY KEY, playtime INTEGER, created_at STRING)'
 
 
 def watch_processes():
@@ -50,14 +50,20 @@ def database_write_game(game_name):
     game_session_time = logging_interval
     
     logged_playtime = db_cursor.execute(f'SELECT playtime FROM {db_table_name} WHERE name=\'{game_name}\'').fetchone()
+    logged_created_at = db_cursor.execute(f'SELECT created_at FROM {db_table_name} WHERE name=\'{game_name}\'').fetchone()
     if logged_playtime == None:
         logged_playtime = 0
     else:
         logged_playtime = logged_playtime[0] # db returns touple
     
+    if logged_created_at == None:
+        logged_created_at = datetime.now().strftime('%B %d %Y - %H:%M:%S')
+    else:
+        logged_created_at = logged_created_at[0]
+    
     game_total_playtime = logged_playtime + game_session_time
     
-    db_cursor.execute(f'REPLACE INTO {db_table_name} VALUES(\'{game_name}\', {game_total_playtime})')
+    db_cursor.execute(f'REPLACE INTO {db_table_name} VALUES(\'{game_name}\', \'{game_total_playtime}\', \'{logged_created_at}\')')
     db_connection.commit()
 
     #print(f'{console_prefix} {game_name} total playtime: {game_total_playtime}')
