@@ -1,6 +1,6 @@
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QFile
+from PySide6.QtCore import QFile, Qt
 
 import threading
 import time
@@ -11,17 +11,13 @@ import interactions
 import communication
 
 
-update_interval = 5 # in seconds
+update_interval = 1 # in seconds
 
 process_list = []
 ignored_processes = []
 game_processes = []
 
-selected_other_process = None
-selected_ignored_process = None
-selected_game_process = None
-
-
+# Button events
 def on_button_remove_from_games_clicked():
     print('xd')
 
@@ -29,25 +25,29 @@ def on_button_add_to_games_clicked():
     print('xd1')
 
 def on_button_add_to_ignorelist_clicked():
-    print('xd12')
+    global list_other_processes
+    selected_other_process = list_other_processes.currentItem()
+    interactions.add_to_ignorelist(selected_other_process.text())
+    list_other_processes.takeItem(list_other_processes.currentRow())
+    ui_lists_init()
 
 def on_button_remove_from_ignorelist_clicked():
-    print('xd14')
+    global list_ignored_processes
+    global list_other_processes
+    
+    selected_ignored_process = list_ignored_processes.currentItem()
+    interactions.remove_from_ignorelist(selected_ignored_process.text())
+    
+    ui_lists_init()
 
 def on_button_add_all_to_ignorelist_clicked():
     global process_list
     global list_ignored_processes
     
-    ignorelist = open(paths.IGNORELIST, 'a+')
     for process in process_list:
-        if not process in ignorelist.readlines():
-            ignorelist.writelines(process + '\n')
-    ignorelist.close()
+        interactions.add_to_ignorelist(process)
     
-    ignored_processes = interactions.ignorelist_read()
-    
-    list_ignored_processes.clear()
-    list_ignored_processes.addItems(ignored_processes)
+    ui_lists_init()
 
 
 def listen_to_pipe():
@@ -63,24 +63,46 @@ def listen_to_pipe():
 
     while True:
         try:
-            current_running_processes = communication.msg_read('process_list')
+            process_list = communication.msg_read('process_list')
             
             # Ignored processes should be ignored COMPLETELY, like the name implies
             for ignored in ignored_processes:
-                #print(current_running_processes)2
-                if ignored in current_running_processes:
-                    current_running_processes.remove(ignored)
-            
-            if len(process_list) != len(current_running_processes):
-                list_other_processes.clear()
-                list_other_processes.addItems(process_list)
+                if ignored in process_list:
+                    process_list.remove(ignored)
 
-                # Should be registered at the end to not have duplicate entries
-                process_list = current_running_processes
+            ui_list_set_items(list_other_processes, process_list)
         except Exception as ex:
             print(f'Exception occured in listener: {ex}')
         
         time.sleep(update_interval)
+
+
+def ui_lists_init():
+    global list_other_processes, list_ignored_processes, ignored_processes
+    
+    ignored_processes = interactions.ignorelist_read()
+    ui_list_set_items(list_ignored_processes, ignored_processes)
+
+def ui_list_set_items(q_list_widget, items):
+    scroll_amount = q_list_widget.verticalScrollBar().value()
+    
+    selected_item_text = None
+    if q_list_widget.currentItem() != None:
+        selected_item_text = q_list_widget.currentItem().text()
+    
+    q_list_widget.clear()
+    q_list_widget.addItems(items)
+    q_list_widget.verticalScrollBar().setValue(scroll_amount)
+    
+    if selected_item_text != None:
+        # Check to see if the previously selected item still exists and select it again if possible
+        previous_item = q_list_widget.findItems(selected_item_text, Qt.MatchFlag.MatchContains)
+        if len(previous_item) > 0:
+            previous_item = previous_item[0]
+            
+            time.sleep(0.001) # setCurrentItem doesn't seem to work reliably without a little delay (?)
+            q_list_widget.setCurrentItem(previous_item)
+
 
 if __name__ == '__main__':
     communication.prepare()
@@ -109,7 +131,8 @@ if __name__ == '__main__':
     button_add_to_ignorelist = window.buttonIgnore
     button_add_all_to_ignorelist = window.buttonIgnoreAll
     button_remove_from_ignorelist = window.buttonRespect
-    
+
+    # Button Presses
     button_remove_from_games.clicked.connect(on_button_remove_from_games_clicked)
     button_add_to_games.clicked.connect(on_button_add_to_games_clicked)
     button_add_to_ignorelist.clicked.connect(on_button_add_to_ignorelist_clicked)
@@ -117,9 +140,7 @@ if __name__ == '__main__':
     button_remove_from_ignorelist.clicked.connect(on_button_remove_from_ignorelist_clicked)
     
     # Init tables and lists
-    ignored_processes = interactions.ignorelist_read()
-    
-    list_ignored_processes.addItems(ignored_processes)
+    ui_lists_init()
     
     # Start listening for any changes
     listener_thread = threading.Thread(target=listen_to_pipe, daemon=True)

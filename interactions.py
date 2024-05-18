@@ -6,8 +6,10 @@ console_prefix = '[interactions.py]'
 
 
 def _file_writeline(file_path, line):
-    loglist = open(file_path, 'r+')
-    loglist.write(f'{line}\n')
+    loglist = open(file_path, 'a+')
+    if not line in loglist.readlines():
+        loglist.writelines(f'{line}\n')
+    loglist.close()
 
 def _file_removeline(file_path, line_to_remove):
     file = open(file_path, 'r')
@@ -17,7 +19,7 @@ def _file_removeline(file_path, line_to_remove):
     for line in file.readlines():
         line = line.rstrip()
         if line != line_to_remove:
-            new_lines.append(line)
+            new_lines.append(f'{line}\n')
     
     file.close()
     
