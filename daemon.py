@@ -6,6 +6,7 @@ import atexit
 
 import paths
 import communication
+import database
 
 console_prefix = '[daemon.py]'
 logging_interval = 5 # In Seconds
@@ -33,16 +34,9 @@ def watch_processes():
             pass
     
     communication.msg_send('process_list', watched_processes)
-
-
-def database_migrate():
-    global db_cursor
-    db_cursor.execute(f'CREATE TABLE IF NOT EXISTS {db_table}')
+    
     
 def database_write_game(game_name):
-    global db_cursor
-    global db_connection
-    
     # Every 'logging_interval' seconds we get a process list
     # So we know the process has been running for approx. 'logging_interval' seconds
     # That's why we can take 'logging_interval' and assume the game/process has been running for
@@ -50,27 +44,22 @@ def database_write_game(game_name):
     # the 'logging_interval' but no matter, it's accurate enough for our playtime logger
     game_session_time = logging_interval
     
-    logged_playtime = db_cursor.execute(f'SELECT playtime FROM {db_table_name} WHERE name=\'{game_name}\'').fetchone()
-    logged_created_at = db_cursor.execute(f'SELECT created_at FROM {db_table_name} WHERE name=\'{game_name}\'').fetchone()
+    logged_playtime = database.get_value_where('name', f'\'{game_name}\'', 'playtime')
     if logged_playtime == None:
         logged_playtime = 0
-    else:
-        logged_playtime = logged_playtime[0] # db returns touple
-    
-    if logged_created_at == None:
-        logged_created_at = datetime.now().strftime('%B %d %Y - %H:%M:%S')
-    else:
-        logged_created_at = logged_created_at[0]
-    
+        
     game_total_playtime = logged_playtime + game_session_time
     
-    db_cursor.execute(f'REPLACE INTO {db_table_name} VALUES(\'{game_name}\', \'{game_total_playtime}\', \'{logged_created_at}\')')
-    db_connection.commit()
+    logged_created_at = database.get_value_where('name', f'\'{game_name}\'', 'created_at')
+    if logged_created_at == None:
+        logged_created_at = datetime.now().strftime('%B %d %Y - %H:%M:%S')
+    
+    database.replace_into(game_name, game_total_playtime, logged_created_at)
 
     #print(f'{console_prefix} {game_name} total playtime: {game_total_playtime}')
 
 if __name__ == '__main__':
-    database_migrate()
+    database.migrate()
     
     communication.prepare()
     atexit.register(communication.remove_old)
