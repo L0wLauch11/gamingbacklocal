@@ -27,6 +27,19 @@ def _file_removeline(file_path, line_to_remove):
     file.writelines(new_lines)
     file.close()
 
+def _file_readlines(file_path):
+    lines = []
+    
+    if os.path.exists(file_path):
+        ignorelist = open(file_path, 'r')
+        for line in ignorelist.readlines():
+            line_sanitized = line.replace('\n', '')
+            lines.append(line_sanitized)
+            
+        ignorelist.close()
+    
+    return lines
+
 
 def add_to_loglist(process_name):
     _file_writeline(paths.LOGLIST, process_name)
@@ -41,14 +54,7 @@ def remove_from_ignorelist(process_name):
     _file_removeline(paths.IGNORELIST, process_name)
 
 def ignorelist_read():
-    ignored_processes = []
-    
-    if os.path.exists(paths.IGNORELIST):
-        ignorelist = open(paths.IGNORELIST, 'r')
-        for line in ignorelist.readlines():
-            line_sanitized = line.replace('\n', '')
-            ignored_processes.append(line_sanitized)
-            
-        ignorelist.close()
-    
-    return ignored_processes
+    return _file_readlines(paths.IGNORELIST)
+
+def loglist_read():
+    return _file_readlines(paths.LOGLIST)

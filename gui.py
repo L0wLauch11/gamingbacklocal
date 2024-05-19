@@ -15,14 +15,18 @@ update_interval = 1 # in seconds
 
 process_list = []
 ignored_processes = []
-game_processes = []
+logged_processes = []
 
 # Button events
 def on_button_remove_from_games_clicked():
     print('xd')
 
 def on_button_add_to_games_clicked():
-    print('xd1')
+    global list_other_processes
+    selected_other_process = list_other_processes.currentItem()
+    list_other_processes.takeItem(list_other_processes.currentRow())
+    interactions.add_to_loglist(selected_other_process.text())
+    ui_lists_init()
 
 def on_button_add_to_ignorelist_clicked():
     global list_other_processes
@@ -55,7 +59,7 @@ def listen_to_pipe():
     global process_list
     
     try:
-        current_running_processes = communication.msg_read('process_list')
+        process_list = communication.msg_read('process_list')
     except KeyError as ex:
         list_other_processes.addItem('Is the daemon running?')
     
@@ -66,7 +70,8 @@ def listen_to_pipe():
             process_list = communication.msg_read('process_list')
             
             # Ignored processes should be ignored COMPLETELY, like the name implies
-            for ignored in ignored_processes:
+            # Games that are already flagged for logging, also don't need to be visible in other processes
+            for ignored in ignored_processes + logged_processes:
                 if ignored in process_list:
                     process_list.remove(ignored)
 
@@ -78,9 +83,11 @@ def listen_to_pipe():
 
 
 def ui_lists_init():
-    global list_other_processes, list_ignored_processes, ignored_processes
+    global list_other_processes, list_ignored_processes
+    global ignored_processes, logged_processes
     
     ignored_processes = interactions.ignorelist_read()
+    logged_processes = interactions.loglist_read()
     ui_list_set_items(list_ignored_processes, ignored_processes)
 
 def ui_list_set_items(q_list_widget, items):
