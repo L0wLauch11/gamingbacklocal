@@ -1,7 +1,7 @@
 import sqlite3
 import paths
 
-db_connection = sqlite3.connect(paths.GAMELOG)
+db_connection = sqlite3.connect(paths.GAMELOG, check_same_thread=False)
 db_cursor = db_connection.cursor()
 db_table_name = 'games'
 db_table = f'{db_table_name}(name TEXT PRIMARY KEY, playtime INTEGER, created_at STRING)'
@@ -23,3 +23,7 @@ def get_value_where(key, key_value, value):
 def replace_into(name, playtime, created_at):
     db_cursor.execute(f'REPLACE INTO {db_table_name} VALUES(\'{name}\', \'{playtime}\', \'{created_at}\')')
     db_connection.commit()
+
+def get_all():
+    result = db_cursor.execute(f'SELECT * from {db_table_name}').fetchall()
+    return result

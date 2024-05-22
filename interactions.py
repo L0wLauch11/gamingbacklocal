@@ -2,8 +2,6 @@
 import paths
 import os
 
-console_prefix = '[interactions.py]'
-
 
 def _file_writeline(file_path, line):
     loglist = open(file_path, 'a+')

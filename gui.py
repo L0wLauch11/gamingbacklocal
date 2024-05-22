@@ -1,17 +1,20 @@
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QFile, Qt
+from PySide6 import QtGui, QtWidgets
 
 import threading
 import time
 import os
+import math
 
 import paths
 import interactions
 import communication
+import database
 
 
-update_interval = 1 # in seconds
+update_interval = 5 # in seconds
 
 process_list = []
 ignored_processes = []
@@ -64,10 +67,29 @@ def listen_to_pipe():
         list_other_processes.addItem('Is the daemon running?')
     
     print('Listening to shelve')
-
+    
     while True:
         try:
             process_list = communication.msg_read('process_list')
+            
+            # Logged processes on top!
+            logged_games_rows = []
+            for logged in logged_processes:
+                # logged is the string name of the process
+                logged_playtime = database.get_value_where('name', f'\'{logged}\'', 'playtime')
+                logged_start_date = database.get_value_where('name', f'\'{logged}\'', 'created_at')
+                
+                logged_playtime_hours = math.ceil(logged_playtime / 60 / 60)
+                logged_playtime_hours_string = f'{logged_playtime_hours} Hour'
+                
+                if logged_playtime_hours != 1:
+                    logged_playtime_hours_string += 's' # plural
+                
+                logged_games_rows.append(
+                    (logged, logged_playtime_hours_string, logged_start_date)
+                )
+            
+            ui_table_set_rows(table_games, logged_games_rows)
             
             # Ignored processes should be ignored COMPLETELY, like the name implies
             # Games that are already flagged for logging, also don't need to be visible in other processes
@@ -83,12 +105,45 @@ def listen_to_pipe():
 
 
 def ui_lists_init():
-    global list_other_processes, list_ignored_processes
+    global list_other_processes, list_ignored_processes, table_games
     global ignored_processes, logged_processes
     
     ignored_processes = interactions.ignorelist_read()
     logged_processes = interactions.loglist_read()
     ui_list_set_items(list_ignored_processes, ignored_processes)
+
+def ui_table_set_rows(table, rows):
+    scroll_amount = table.verticalScrollBar().value()
+    
+    selected_item_text = None
+    if table.currentItem() != None:
+        selected_item_text = table.currentItem().text()
+    
+    table.setRowCount(0)
+    for row in rows:
+        ui_table_insert_row(table, row)
+    
+    if selected_item_text != None:
+        # Check to see if the previously selected item still exists and select it again if possible
+        previous_item = table.findItems(selected_item_text, Qt.MatchFlag.MatchContains)
+        if len(previous_item) > 0:
+            previous_item = previous_item[0]
+            
+            time.sleep(0.001) # setCurrentItem doesn't seem to work reliably without a little delay (?)
+            table.setCurrentItem(previous_item)
+    
+    table.verticalScrollBar().setValue(scroll_amount)
+
+def ui_table_insert_row(table, row):
+    
+    
+    position = table.rowCount()
+    table.insertRow(position)
+    
+    i = 0
+    for _ in row:
+        table.setItem(position, i, QtWidgets.QTableWidgetItem(row[i]))
+        i += 1
 
 def ui_list_set_items(q_list_widget, items):
     scroll_amount = q_list_widget.verticalScrollBar().value()
@@ -99,7 +154,6 @@ def ui_list_set_items(q_list_widget, items):
     
     q_list_widget.clear()
     q_list_widget.addItems(items)
-    q_list_widget.verticalScrollBar().setValue(scroll_amount)
     
     if selected_item_text != None:
         # Check to see if the previously selected item still exists and select it again if possible
@@ -109,6 +163,8 @@ def ui_list_set_items(q_list_widget, items):
             
             time.sleep(0.001) # setCurrentItem doesn't seem to work reliably without a little delay (?)
             q_list_widget.setCurrentItem(previous_item)
+    
+    q_list_widget.verticalScrollBar().setValue(scroll_amount)
 
 
 if __name__ == '__main__':
@@ -116,7 +172,7 @@ if __name__ == '__main__':
     
     ui_file = QFile(paths.MAIN_WINDOW)
     ui_file.open(QFile.ReadOnly)
-
+    
     loader = QUiLoader()
     
     # app needs to be initialized after loader
